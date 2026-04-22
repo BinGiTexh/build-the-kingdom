@@ -1,11 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { 
-  ArrowLeft, 
-  ArrowRight, 
-  User, 
-  Mail, 
-  Lock, 
-  Eye, 
+import {
+  ArrowLeft,
+  ArrowRight,
+  User,
+  Mail,
+  Lock,
+  Eye,
   EyeOff,
   Upload,
   Check,
@@ -21,14 +21,35 @@ import {
   Star,
   AlertCircle
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import GoogleOAuthButton from '../auth/GoogleOAuthButton';
 
 const RegistrationForm = ({ userType, onBack, onComplete }) => {
+  const navigate = useNavigate();
+  const { registerWithGoogle } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [googleError, setGoogleError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
+
+  const handleGoogleSuccess = async ({ googleToken }) => {
+    setGoogleError('');
+    try {
+      const role = userType === 'employer' ? 'EMPLOYER' : 'JOBSEEKER';
+      await registerWithGoogle(googleToken, role);
+      navigate(userType === 'employer' ? '/employer/dashboard' : '/dashboard');
+    } catch (error) {
+      setGoogleError(error.response?.data?.error || 'Google registration failed');
+    }
+  };
+
+  const handleGoogleError = (error) => {
+    setGoogleError(error?.message || 'Google sign-in failed');
+  };
 
   // Form data state
   const [formData, setFormData] = useState({
@@ -191,6 +212,28 @@ const RegistrationForm = ({ userType, onBack, onComplete }) => {
         <p className="text-gray-600 dark:text-gray-400">
           Set up your login credentials to get started
         </p>
+      </div>
+
+      <GoogleOAuthButton
+        onSuccess={handleGoogleSuccess}
+        onError={handleGoogleError}
+        text="Sign up with Google"
+      />
+
+      {googleError && (
+        <p className="text-sm text-red-600 dark:text-red-400 text-center flex items-center justify-center">
+          <AlertCircle className="w-4 h-4 mr-1" />
+          {googleError}
+        </p>
+      )}
+
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-4 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">or register with email</span>
+        </div>
       </div>
 
       <div className="space-y-4">

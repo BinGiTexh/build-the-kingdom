@@ -42,6 +42,36 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loginWithGoogle = async (googleToken, role) => {
+    try {
+      const response = await api.post('/api/auth/google', { googleToken, role });
+      localStorage.setItem('token', response.data.token);
+      setCurrentUser(response.data.user);
+      setError(null);
+      return response.data;
+    } catch (err) {
+      setError(err.response?.data?.error || 'Google login failed');
+      throw err;
+    }
+  };
+
+  const registerWithGoogle = async (googleToken, role, companyData) => {
+    try {
+      const response = await api.post('/api/auth/google/register', {
+        googleToken,
+        role,
+        ...companyData
+      });
+      localStorage.setItem('token', response.data.token);
+      setCurrentUser(response.data.user);
+      setError(null);
+      return response.data;
+    } catch (err) {
+      setError(err.response?.data?.error || 'Google registration failed');
+      throw err;
+    }
+  };
+
   const register = async (userData) => {
     try {
       const response = await api.post('/api/auth/register', userData);
@@ -66,7 +96,9 @@ export const AuthProvider = ({ children }) => {
     error,
     isAuthenticated: !!currentUser,
     login,
+    loginWithGoogle,
     register,
+    registerWithGoogle,
     logout
   };
 
@@ -78,7 +110,9 @@ export const AuthProvider = ({ children }) => {
         error: null,
         isAuthenticated: false,
         login: () => {},
+        loginWithGoogle: () => {},
         register: () => {},
+        registerWithGoogle: () => {},
         logout: () => {}
       }}>
         {children}

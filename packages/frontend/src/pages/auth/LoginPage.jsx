@@ -1,25 +1,42 @@
 import React, { useState } from 'react';
-import { 
-  Container, 
-  Box, 
-  Paper, 
-  Typography, 
-  TextField, 
-  Button, 
-  Alert 
+import {
+  Container,
+  Box,
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  Alert,
+  Divider
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { validateEmail } from '../../utils/validation';
 import { handleApiError } from '../../utils/errorHandling';
+import GoogleOAuthButton from '../../components/auth/GoogleOAuthButton';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState('');
+
+  const handleGoogleSuccess = async ({ googleToken }) => {
+    setApiError('');
+    try {
+      await loginWithGoogle(googleToken);
+      const redirectTo = location.state?.from || '/dashboard';
+      navigate(redirectTo, { replace: true });
+    } catch (error) {
+      setApiError(handleApiError(error, 'Google login failed'));
+    }
+  };
+
+  const handleGoogleError = (error) => {
+    setApiError(error?.message || 'Google login failed');
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -68,6 +85,14 @@ export const LoginPage = () => {
               {apiError}
             </Alert>
           )}
+
+          <GoogleOAuthButton
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            text="Sign in with Google"
+          />
+
+          <Divider sx={{ my: 3 }}>or</Divider>
 
           <form onSubmit={handleSubmit}>
             <TextField
