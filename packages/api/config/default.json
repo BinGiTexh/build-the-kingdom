@@ -1,0 +1,26 @@
+{
+  "region": {
+    "name": "Default",
+    "currency": "USD",
+    "timezone": "UTC",
+    "locales": ["en"],
+    "jobTypes": [
+      "FULL_TIME",
+      "PART_TIME",
+      "CONTRACT",
+      "INTERNSHIP"
+    ],
+    "locations": []
+  },
+  "features": {
+    "quickApply": true,
+    "resumeParser": true,
+    "skillMatching": true,
+    "salaryRanges": true
+  },
+  "validation": {
+    "allowedFileTypes": ["pdf", "doc", "docx"],
+    "maxFileSize": 5242880
+  }
+}
+

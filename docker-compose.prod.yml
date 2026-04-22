@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    volumes:
+      - /home/ubuntu/cloudflared/credentials.json:/etc/cloudflared/credentials.json
+      - /home/ubuntu/cloudflared/config.yml:/etc/cloudflared/config.yml
+    networks:
+      - app-network
+    depends_on:
+      - frontend
+      - api
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: ${PROJECT_NAME:-jobplatform}-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-jobplatform}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: ${PROJECT_NAME:-jobplatform}-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/production/Dockerfile.api
+    container_name: ${PROJECT_NAME:-jobplatform}-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: postgresql://postgres:${DB_PASSWORD}@postgres:5432/${DB_NAME:-jobplatform}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      REDIS_URL: redis://redis:6379
+      SITE_NAME: ${SITE_NAME:-Job Platform}
+      SITE_TAGLINE: ${SITE_TAGLINE:-Find Your Dream Job}
+      SITE_DOMAIN: ${SITE_DOMAIN:-localhost}
+      LOGO_URL: ${LOGO_URL:-/logo.svg}
+      PRIMARY_COLOR: ${PRIMARY_COLOR:-#2563EB}
+      SECONDARY_COLOR: ${SECONDARY_COLOR:-#10B981}
+      CURRENCY: ${CURRENCY:-USD}
+      CURRENCY_SYMBOL: ${CURRENCY_SYMBOL:-$}
+      STRIPE_ENABLED: ${STRIPE_ENABLED:-false}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      FEED_INGEST_ENABLED: ${FEED_INGEST_ENABLED:-true}
+      FRONTEND_URL: ${FRONTEND_URL:-https://localhost}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    volumes:
+      - uploads:/app/uploads
+    ports:
+      - "127.0.0.1:5000:5000"
+    networks:
+      - app-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/production/Dockerfile.frontend
+      args:
+        VITE_API_URL: /api
+    container_name: ${PROJECT_NAME:-jobplatform}-frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+    volumes:
+      - uploads:/usr/share/nginx/uploads
+    ports:
+      - "127.0.0.1:3080:80"
+    networks:
+      - app-network
+    depends_on:
+      - api
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  uploads:
+    name: ${PROJECT_NAME:-jobplatform}_uploads
+  redis_data:

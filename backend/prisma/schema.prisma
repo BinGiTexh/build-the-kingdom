@@ -1,0 +1,302 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Auth & Profiles ────────────────────────────────────────────────
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String
+  role          Role           @default(JOBSEEKER)
+  profile       Profile?
+  companyId     String?
+  company       Company?       @relation("CompanyEmployees", fields: [companyId], references: [id])
+  applications  Application[]
+  savedJobs     SavedJob[]
+  notifications Notification[] @relation("UserNotifications")
+  jobViews      JobView[]
+  payments      Payment[]
+  subscriptions Subscription[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Profile {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  name           String
+  title          String?
+  bio            String?
+  location       String?
+  phoneNumber    String?
+  skills         String[]
+  education      Json?
+  experience     Json?
+  photoUrl       String?
+  resumeUrl      String?
+  resumeFileName String?
+  user           User     @relation(fields: [userId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Company {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  location    String?
+  website     String?
+  industry    String?
+  logoUrl     String?
+  employees   User[]   @relation("CompanyEmployees")
+  jobs        Job[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ─── Jobs ───────────────────────────────────────────────────────────
+
+model Job {
+  id               String        @id @default(uuid())
+  title            String
+  description      String
+  location         String
+  type             JobType
+  salary           Json?
+  skills           String[]
+  requirements     String?
+  status           JobStatus     @default(ACTIVE)
+  featured         Boolean       @default(false)
+  companyId        String?
+  company          Company?      @relation(fields: [companyId], references: [id])
+  applications     Application[]
+  savedBy          SavedJob[]
+  views            JobView[]
+  payments         Payment[]
+  applyUrl         String?
+  externalJobId    String?       @unique
+  externalApplyUrl String?
+  feedSource       String?
+  feedImportedAt   DateTime?
+  clickCount       Int           @default(0)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@index([status])
+  @@index([feedSource])
+  @@index([location])
+  @@index([createdAt(sort: Desc)])
+  @@index([type])
+  @@index([companyId])
+}
+
+model Application {
+  id            String            @id @default(uuid())
+  jobId         String
+  userId        String
+  status        ApplicationStatus @default(PENDING)
+  coverLetter   String?
+  resumeUrl     String?
+  job           Job               @relation(fields: [jobId], references: [id])
+  user          User              @relation(fields: [userId], references: [id])
+  notifications Notification[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+}
+
+model SavedJob {
+  id        String   @id @default(uuid())
+  jobId     String
+  userId    String
+  job       Job      @relation(fields: [jobId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([jobId, userId])
+  @@index([userId])
+  @@index([jobId])
+}
+
+// ─── Notifications ──────────────────────────────────────────────────
+
+model Notification {
+  id              String             @id @default(uuid())
+  type            NotificationType
+  status          NotificationStatus @default(UNREAD)
+  title           String             @default("Notification")
+  message         String
+  metadata        Json?
+  dismissed       Boolean            @default(false)
+  recipientId     String
+  applicationId   String?
+  recipient       User               @relation("UserNotifications", fields: [recipientId], references: [id])
+  application     Application?       @relation(fields: [applicationId], references: [id])
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+}
+
+// ─── Analytics ──────────────────────────────────────────────────────
+
+model JobView {
+  id        String   @id @default(uuid())
+  jobId     String
+  userId    String?
+  ipAddress String?
+  userAgent String?
+  referrer  String?
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+
+  @@index([jobId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ─── Payments (Stripe, config-driven) ───────────────────────────────
+
+model Payment {
+  id                 String        @id @default(uuid())
+  stripePaymentId    String        @unique
+  userId             String
+  amount             Int
+  currency           String        @default("USD")
+  status             PaymentStatus @default(PENDING)
+  paymentType        PaymentType
+  description        String?
+  metadata           Json?
+  jobId              String?
+  subscriptionId     String?
+  stripeClientSecret String?
+  stripeReceiptUrl   String?
+  user               User          @relation(fields: [userId], references: [id])
+  job                Job?          @relation(fields: [jobId], references: [id])
+  subscription       Subscription? @relation(fields: [subscriptionId], references: [id])
+  refunds            Refund[]
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  processedAt        DateTime?
+}
+
+model Subscription {
+  id                   String             @id @default(uuid())
+  stripeSubscriptionId String             @unique
+  userId               String
+  plan                 SubscriptionPlan
+  status               SubscriptionStatus @default(ACTIVE)
+  amount               Int
+  currency             String             @default("USD")
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean            @default(false)
+  canceledAt           DateTime?
+  jobPostingLimit      Int                @default(10)
+  featuredListings     Int                @default(0)
+  user                 User               @relation(fields: [userId], references: [id])
+  payments             Payment[]
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+}
+
+model Refund {
+  id             String   @id @default(uuid())
+  stripeRefundId String   @unique
+  paymentId      String
+  amount         Int
+  currency       String   @default("USD")
+  reason         String?
+  status         String
+  processedBy    String?
+  payment        Payment  @relation(fields: [paymentId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model WebhookEvent {
+  id              String    @id @default(uuid())
+  stripeEventId   String    @unique
+  eventType       String
+  processed       Boolean   @default(false)
+  processingError String?
+  eventData       Json
+  createdAt       DateTime  @default(now())
+  processedAt     DateTime?
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  EMPLOYER
+  JOBSEEKER
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  TEMPORARY
+}
+
+enum JobStatus {
+  ACTIVE
+  CLOSED
+  DRAFT
+  EXPIRED
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWED
+  SHORTLISTED
+  REJECTED
+  ACCEPTED
+}
+
+enum NotificationType {
+  APPLICATION_UPDATE
+  JOB_UPDATE
+  SAVED_JOB_UPDATE
+  SYSTEM
+}
+
+enum NotificationStatus {
+  READ
+  UNREAD
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELED
+  REFUNDED
+}
+
+enum PaymentType {
+  JOB_POSTING
+  FEATURED_LISTING
+  SUBSCRIPTION
+}
+
+enum SubscriptionPlan {
+  BASIC
+  PREMIUM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  UNPAID
+  TRIALING
+}
