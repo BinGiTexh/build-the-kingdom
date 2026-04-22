@@ -20,13 +20,15 @@ resource "aws_secretsmanager_secret" "app_secrets" {
 
 resource "aws_secretsmanager_secret_version" "app_secrets" {
   secret_id = aws_secretsmanager_secret.app_secrets.id
-  secret_string = jsonencode({
-    db_password            = random_password.db_password.result
-    jwt_secret             = random_password.jwt_secret.result
-    cloudflare_tunnel_token = var.cloudflare_tunnel_token
-    site_name              = var.site_name
-    site_tagline           = var.site_tagline
-    primary_color          = var.primary_color
-    secondary_color        = var.secondary_color
-  })
+  secret_string = jsonencode(merge(
+    {
+      db_password   = random_password.db_password.result
+      jwt_secret    = random_password.jwt_secret.result
+      site_name     = var.site_name
+      site_tagline  = var.site_tagline
+      primary_color = var.primary_color
+      secondary_color = var.secondary_color
+    },
+    var.cloudflare_tunnel_token != "" ? { cloudflare_tunnel_token = var.cloudflare_tunnel_token } : {}
+  ))
 }

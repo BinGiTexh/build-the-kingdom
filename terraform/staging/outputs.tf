@@ -16,12 +16,9 @@ output "ssh_command" {
   value       = "ssh -i ~/.ssh/${var.ssh_key_name} ubuntu@${aws_instance.main.public_ip}"
 }
 
-output "site_urls" {
-  description = "URLs for the deployed site"
-  value       = <<-EOT
-    Frontend: https://${var.domain}
-    API:      https://api.${var.domain}
-  EOT
+output "site_url" {
+  description = "URL for the deployed site"
+  value       = var.domain != "" ? "https://${var.domain}" : "http://${aws_instance.main.public_ip}"
 }
 
 output "secrets_manager_arn" {

@@ -68,24 +68,29 @@ variable "github_branch" {
 variable "domain" {
   type        = string
   description = "Primary domain for this site (e.g. buildthekingdom.com)"
+  default     = ""
 }
 
 variable "cloudflare_tunnel_id" {
-  type = string
+  type    = string
+  default = ""
 }
 
 variable "cloudflare_tunnel_secret" {
   type      = string
   sensitive = true
+  default   = ""
 }
 
 variable "cloudflare_tunnel_token" {
   type      = string
   sensitive = true
+  default   = ""
 }
 
 variable "cloudflare_account_tag" {
-  type = string
+  type    = string
+  default = ""
 }
 
 variable "site_name" {

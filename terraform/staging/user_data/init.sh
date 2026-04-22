@@ -125,10 +125,15 @@ STRIPE_ENABLED=false
 
 # Feed Ingestion
 FEED_INGEST_ENABLED=true
-
-# Frontend
-FRONTEND_URL=https://$DOMAIN
 ENV_EOL
+
+# Set FRONTEND_URL based on whether domain is configured
+PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo "localhost")
+if [ -n "$DOMAIN" ]; then
+    echo "FRONTEND_URL=https://$DOMAIN" >> .env
+else
+    echo "FRONTEND_URL=http://$PUBLIC_IP" >> .env
+fi
 
 chmod 600 .env
 chown ubuntu:ubuntu .env
@@ -138,12 +143,20 @@ chown ubuntu:ubuntu .env
 # -------------------------------------------------------------------
 COMPOSE_FILE="/home/ubuntu/$${PROJECT_NAME}/docker-compose.prod.yml"
 
+COMPOSE_PROFILES=""
+if [ -n "$CLOUDFLARE_TUNNEL_ID" ] && [ -n "$CLOUDFLARE_TUNNEL_SECRET" ]; then
+    COMPOSE_PROFILES="--profile cloudflare"
+    log "Cloudflare Tunnel enabled"
+else
+    log "No Cloudflare Tunnel — site will be accessible via public IP on port 80"
+fi
+
 build_services() {
     local max_retries=3
     local retry_count=0
     while [ $retry_count -lt $max_retries ]; do
         log "Building services (attempt $((retry_count + 1))/$max_retries)..."
-        if sudo -u ubuntu bash -c "cd /home/ubuntu/$${PROJECT_NAME} && docker-compose -f $COMPOSE_FILE build --no-cache"; then
+        if sudo -u ubuntu bash -c "cd /home/ubuntu/$${PROJECT_NAME} && docker-compose -f $COMPOSE_FILE $COMPOSE_PROFILES build --no-cache"; then
             log "Services built successfully"
             return 0
         fi
@@ -158,7 +171,7 @@ start_services() {
     local retry_count=0
     while [ $retry_count -lt $max_retries ]; do
         log "Starting services (attempt $((retry_count + 1))/$max_retries)..."
-        if sudo -u ubuntu bash -c "cd /home/ubuntu/$${PROJECT_NAME} && docker-compose -f $COMPOSE_FILE up -d"; then
+        if sudo -u ubuntu bash -c "cd /home/ubuntu/$${PROJECT_NAME} && docker-compose -f $COMPOSE_FILE $COMPOSE_PROFILES up -d"; then
             log "Services started successfully"
             return 0
         fi
@@ -219,9 +232,11 @@ sudo -u ubuntu docker-compose -f $COMPOSE_FILE ps
 
 log "=== Deployment Summary ==="
 log "Project:  $${PROJECT_NAME}"
-log "Domain:   $DOMAIN"
-log "API:      http://localhost:5000"
-log "Frontend: http://localhost:3080"
-log "Instance: $(curl -s http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo 'unknown')"
+log "Instance: $PUBLIC_IP"
+if [ -n "$DOMAIN" ]; then
+    log "Domain:   https://$DOMAIN"
+else
+    log "Site:     http://$PUBLIC_IP"
+fi
 
 log "Initialization complete!"
