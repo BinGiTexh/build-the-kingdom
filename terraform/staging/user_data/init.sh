@@ -128,7 +128,13 @@ FEED_INGEST_ENABLED=true
 ENV_EOL
 
 # Set FRONTEND_URL based on whether domain is configured
-PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo "localhost")
+# IMDSv2 requires a token for metadata queries
+IMDS_TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" 2>/dev/null || true)
+if [ -n "$IMDS_TOKEN" ]; then
+    PUBLIC_IP=$(curl -s -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo "localhost")
+else
+    PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo "localhost")
+fi
 if [ -n "$DOMAIN" ]; then
     echo "FRONTEND_URL=https://$DOMAIN" >> .env
 else
