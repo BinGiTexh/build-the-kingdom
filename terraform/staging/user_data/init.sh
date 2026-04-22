@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-LOG_FILE="/var/log/$${PROJECT_NAME}-init.log"
-exec > >(tee -a "$${LOG_FILE}") 2>&1
+LOG_FILE="/var/log/$PROJECT_NAME-init.log"
+exec > >(tee -a "$LOG_FILE") 2>&1
 
 log() { echo "[$(date)] $1"; }
 error_exit() { log "ERROR: $1"; exit 1; }
@@ -83,20 +83,20 @@ fi
 # Clone repo and create .env
 # -------------------------------------------------------------------
 log "Cloning repository..."
-mkdir -p /home/ubuntu/$${PROJECT_NAME}/{logs,data/{postgres,redis}}
+mkdir -p /home/ubuntu/$PROJECT_NAME/{logs,data/{postgres,redis}}
 cd /home/ubuntu
 
-if [ ! -d "$${PROJECT_NAME}/.git" ]; then
-    git clone -b "$GITHUB_BRANCH" "https://github.com/$GITHUB_REPO.git" "$${PROJECT_NAME}"
+if [ ! -d "$PROJECT_NAME/.git" ]; then
+    git clone -b "$GITHUB_BRANCH" "https://github.com/$GITHUB_REPO.git" "$PROJECT_NAME"
 fi
-chown -R ubuntu:ubuntu "$${PROJECT_NAME}"
-cd /home/ubuntu/$${PROJECT_NAME}
+chown -R ubuntu:ubuntu "$PROJECT_NAME"
+cd /home/ubuntu/$PROJECT_NAME
 
 log "Creating environment configuration..."
 cat > .env <<ENV_EOL
 NODE_ENV=production
 PORT=5000
-PROJECT_NAME=$${PROJECT_NAME}
+PROJECT_NAME=$PROJECT_NAME
 
 # Database
 DB_PASSWORD=$DB_PASSWORD
@@ -141,7 +141,7 @@ chown ubuntu:ubuntu .env
 # -------------------------------------------------------------------
 # Build and start services
 # -------------------------------------------------------------------
-COMPOSE_FILE="/home/ubuntu/$${PROJECT_NAME}/docker-compose.prod.yml"
+COMPOSE_FILE="/home/ubuntu/$PROJECT_NAME/docker-compose.prod.yml"
 
 COMPOSE_PROFILES=""
 if [ -n "$CLOUDFLARE_TUNNEL_ID" ] && [ -n "$CLOUDFLARE_TUNNEL_SECRET" ]; then
@@ -156,7 +156,7 @@ build_services() {
     local retry_count=0
     while [ $retry_count -lt $max_retries ]; do
         log "Building services (attempt $((retry_count + 1))/$max_retries)..."
-        if sudo -u ubuntu bash -c "cd /home/ubuntu/$${PROJECT_NAME} && docker-compose -f $COMPOSE_FILE $COMPOSE_PROFILES build --no-cache"; then
+        if sudo -u ubuntu bash -c "cd /home/ubuntu/$PROJECT_NAME && docker-compose -f $COMPOSE_FILE $COMPOSE_PROFILES build --no-cache"; then
             log "Services built successfully"
             return 0
         fi
@@ -171,7 +171,7 @@ start_services() {
     local retry_count=0
     while [ $retry_count -lt $max_retries ]; do
         log "Starting services (attempt $((retry_count + 1))/$max_retries)..."
-        if sudo -u ubuntu bash -c "cd /home/ubuntu/$${PROJECT_NAME} && docker-compose -f $COMPOSE_FILE $COMPOSE_PROFILES up -d"; then
+        if sudo -u ubuntu bash -c "cd /home/ubuntu/$PROJECT_NAME && docker-compose -f $COMPOSE_FILE $COMPOSE_PROFILES up -d"; then
             log "Services started successfully"
             return 0
         fi
@@ -231,7 +231,7 @@ log "=== Final service status ==="
 sudo -u ubuntu docker-compose -f $COMPOSE_FILE ps
 
 log "=== Deployment Summary ==="
-log "Project:  $${PROJECT_NAME}"
+log "Project:  $PROJECT_NAME"
 log "Instance: $PUBLIC_IP"
 if [ -n "$DOMAIN" ]; then
     log "Domain:   https://$DOMAIN"
