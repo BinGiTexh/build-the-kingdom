@@ -7,13 +7,20 @@ import {
   TextField,
   Button,
   Alert,
-  Divider
+  Divider,
+  ToggleButtonGroup,
+  ToggleButton
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { validateEmail } from '../../utils/validation';
 import { handleApiError } from '../../utils/errorHandling';
 import GoogleOAuthButton from '../../components/auth/GoogleOAuthButton';
+
+const ROLE_LABELS = {
+  JOBSEEKER: 'Job Seeker',
+  EMPLOYER: 'Employer'
+};
 
 export const LoginPage = () => {
   const navigate = useNavigate();
@@ -22,11 +29,12 @@ export const LoginPage = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState('');
+  const [selectedRole, setSelectedRole] = useState('JOBSEEKER');
 
   const handleGoogleSuccess = async ({ googleToken }) => {
     setApiError('');
     try {
-      await loginWithGoogle(googleToken);
+      await loginWithGoogle(googleToken, selectedRole);
       const redirectTo = location.state?.from || '/dashboard';
       navigate(redirectTo, { replace: true });
     } catch (error) {
@@ -48,7 +56,6 @@ export const LoginPage = () => {
     e.preventDefault();
     setApiError('');
 
-    // Validate form
     const newErrors = {};
     if (!validateEmail(formData.email)) {
       newErrors.email = 'Invalid email address';
@@ -64,7 +71,6 @@ export const LoginPage = () => {
 
     try {
       await login(formData.email, formData.password);
-      // Redirect to intended page or dashboard
       const redirectTo = location.state?.from || '/dashboard';
       navigate(redirectTo, { replace: true });
     } catch (error) {
@@ -86,10 +92,26 @@ export const LoginPage = () => {
             </Alert>
           )}
 
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="body2" color="textSecondary" align="center" sx={{ mb: 1.5 }}>
+              I am signing in as:
+            </Typography>
+            <ToggleButtonGroup
+              value={selectedRole}
+              exclusive
+              onChange={(_, value) => value && setSelectedRole(value)}
+              fullWidth
+              size="small"
+            >
+              <ToggleButton value="JOBSEEKER">Job Seeker</ToggleButton>
+              <ToggleButton value="EMPLOYER">Employer</ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+
           <GoogleOAuthButton
             onSuccess={handleGoogleSuccess}
             onError={handleGoogleError}
-            text="Sign in with Google"
+            text={`Continue with Google as ${ROLE_LABELS[selectedRole]}`}
           />
 
           <Divider sx={{ my: 3 }}>or</Divider>

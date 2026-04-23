@@ -26,7 +26,7 @@ export const JobSeekerDashboard = () => {
 
   const loadApplications = async () => {
     try {
-      const response = await api.get('/api/applications/me');
+      const response = await api.get('/api/applications/my-applications');
       setApplications(response.data);
     } catch (err) {
       setError(handleApiError(err));
