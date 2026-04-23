@@ -90,6 +90,7 @@ services:
       dockerfile: docker/production/Dockerfile.frontend
       args:
         VITE_API_URL: /api
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
     container_name: ${PROJECT_NAME:-jobplatform}-frontend
     restart: unless-stopped
     environment:
