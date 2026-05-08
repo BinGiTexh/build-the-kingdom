@@ -1,4 +1,5 @@
 const { Readable } = require('stream');
+const { createGunzip } = require('zlib');
 const prisma = require('../lib/prisma');
 
 const BATCH_SIZE = 5000;
@@ -221,9 +222,18 @@ class FeedIngestionService {
     if (!response.ok) throw new Error(`Feed fetch failed: ${response.status}`);
 
     const contentType = response.headers.get('content-type') || '';
-    const isJson = contentType.includes('json');
+    const isJson = contentType.includes('json') && !feedUrl.endsWith('.gz');
+    const isGzipped = feedUrl.endsWith('.gz') ||
+      contentType.includes('gzip') ||
+      response.headers.get('content-encoding') === 'gzip';
 
-    const nodeStream = Readable.fromWeb(response.body);
+    let nodeStream = Readable.fromWeb(response.body);
+
+    if (isGzipped) {
+      console.log('[feed] Decompressing gzipped feed...');
+      const gunzip = createGunzip();
+      nodeStream = nodeStream.pipe(gunzip);
+    }
 
     if (isJson) {
       await this.ingestJsonStream(nodeStream, source, results);
