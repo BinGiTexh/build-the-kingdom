@@ -1,19 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Briefcase, TrendingUp, Zap, Users } from 'lucide-react';
+import { useSiteConfig } from '../../context/SiteConfigContext';
+
+function formatCount(n) {
+  if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}K+`;
+  return `${n}+`;
+}
 
 const ModernHero = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [location, setLocation] = useState('');
   const [isVisible, setIsVisible] = useState(false);
+  const { stats: liveStats } = useSiteConfig();
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
 
   const stats = [
-    { icon: Briefcase, label: 'Active Jobs', value: '12,000+', color: 'text-primary-600' },
-    { icon: Users, label: 'Companies', value: '500+', color: 'text-secondary-600' },
-    { icon: TrendingUp, label: 'Success Rate', value: '94%', color: 'text-accent-600' },
+    { icon: Briefcase, label: 'Active Jobs', value: liveStats?.jobCount ? formatCount(liveStats.jobCount) : '—' },
+    { icon: Users, label: 'Companies', value: liveStats?.companyCount ? formatCount(liveStats.companyCount) : '—' },
+    { icon: TrendingUp, label: 'Job Seekers', value: liveStats?.userCount ? formatCount(liveStats.userCount) : '—' },
   ];
 
   const trendingSearches = [

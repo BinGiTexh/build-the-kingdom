@@ -5,37 +5,31 @@ import {
   Briefcase,
   Filter,
   Bookmark,
-  Share2,
-  TrendingUp,
   Building2,
   Clock,
   DollarSign,
-  Star,
-  CheckCircle,
-  Globe,
-  Users,
-  Calendar,
-  Zap,
   Heart,
   ExternalLink,
   ChevronDown,
-  SlidersHorizontal
+  X
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSiteConfig } from '../context/SiteConfigContext';
 import api from '../services/api';
 
 export const ModernJobSearchPage = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [location, setLocation] = useState('');
+  const [searchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
+  const [location, setLocation] = useState(searchParams.get('location') || '');
   const [jobType, setJobType] = useState('');
-  const [salaryRange, setSalaryRange] = useState([50000, 150000]);
-  const [remoteOnly, setRemoteOnly] = useState(false);
-  const [savedJobs, setSavedJobs] = useState(new Set());
-  const [activeTab, setActiveTab] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [totalJobs, setTotalJobs] = useState(0);
+  const [page, setPage] = useState(1);
+  const [savedJobs, setSavedJobs] = useState(new Set());
+  const navigate = useNavigate();
+  const { config } = useSiteConfig();
 
   const fetchJobs = async () => {
     try {
@@ -44,6 +38,7 @@ export const ModernJobSearchPage = () => {
       if (searchTerm) params.append('search', searchTerm);
       if (location) params.append('location', location);
       if (jobType) params.append('type', jobType);
+      params.append('page', page);
       const response = await api.get(`/api/jobs?${params}`);
       setJobs(response.data.jobs || []);
       setTotalJobs(response.data.pagination?.total || 0);
@@ -56,344 +51,219 @@ export const ModernJobSearchPage = () => {
 
   useEffect(() => {
     fetchJobs();
-  }, []);
+  }, [page]);
 
-  const handleSaveJob = (jobId) => {
-    const newSavedJobs = new Set(savedJobs);
-    if (newSavedJobs.has(jobId)) {
-      newSavedJobs.delete(jobId);
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setPage(1);
+    fetchJobs();
+  };
+
+  const handleSaveJob = (e, jobId) => {
+    e.stopPropagation();
+    const next = new Set(savedJobs);
+    if (next.has(jobId)) next.delete(jobId);
+    else next.add(jobId);
+    setSavedJobs(next);
+  };
+
+  const handleApply = (e, job) => {
+    e.stopPropagation();
+    if (job.externalApplyUrl) {
+      window.location.href = `/go/apply/${job.id}`;
     } else {
-      newSavedJobs.add(jobId);
+      navigate(`/jobs/${job.id}/apply`);
     }
-    setSavedJobs(newSavedJobs);
   };
 
-  const formatSalary = (min, max) => {
-    return `$${(min / 1000).toFixed(0)}k - $${(max / 1000).toFixed(0)}k`;
+  const formatSalary = (salary) => {
+    if (!salary?.min) return null;
+    const sym = config.currencySymbol || '$';
+    if (salary.max && salary.max !== salary.min) {
+      return `${sym}${(salary.min / 1000).toFixed(0)}k - ${sym}${(salary.max / 1000).toFixed(0)}k`;
+    }
+    return `From ${sym}${(salary.min / 1000).toFixed(0)}k`;
   };
 
-  const JobCard = ({ job }) => (
-    <Card 
-      sx={{ 
-        mb: 2, 
-        transition: 'all 0.2s ease-in-out',
-        '&:hover': {
-          transform: 'translateY(-2px)',
-          boxShadow: 4
-        },
-        border: job.urgent ? '2px solid #ff6b35' : '1px solid #e0e0e0'
-      }}
-    >
-      <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar
-              src={job.logo}
-              alt={job.company?.name || job.companyName || 'Unknown Company'}
-              sx={{ width: 48, height: 48 }}
-            />
-            <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="h6" component="h3">
-                  {job.title}
-                </Typography>
-                {job.verified && <Verified color="primary" sx={{ fontSize: 16 }} />}
-                {job.urgent && (
-                  <Chip
-                    label="URGENT"
-                    size="small"
-                    color="error"
-                    sx={{ fontSize: '0.7rem', height: 20 }}
-                  />
-                )}
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography color="text.secondary">
-                  {job.company?.name || job.companyName || 'Unknown Company'}
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Star sx={{ fontSize: 14, color: '#ffc107' }} />
-                  <Typography variant="body2" color="text.secondary">
-                    {job.rating}
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          </Box>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <IconButton 
-              size="small"
-              onClick={() => handleSaveJob(job.id)}
-              color={savedJobs.has(job.id) ? 'primary' : 'default'}
-            >
-              {savedJobs.has(job.id) ? <Bookmark /> : <BookmarkBorder />}
-            </IconButton>
-            <IconButton size="small">
-              <Share />
-            </IconButton>
-          </Box>
-        </Box>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <LocationOn sx={{ fontSize: 16, color: 'text.secondary' }} />
-            <Typography variant="body2" color="text.secondary">
-              {job.location}
-            </Typography>
-            {job.remote && <RemoteWork sx={{ fontSize: 16, color: 'primary.main' }} />}
-          </Box>
-          <Chip 
-            icon={<Work />}
-            label={job.type.replace('_', ' ')}
-            size="small"
-            variant="outlined"
-          />
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <AttachMoney sx={{ fontSize: 16, color: 'success.main' }} />
-            <Typography variant="body2" color="success.main" fontWeight="bold">
-              {formatSalary(job.salary.min, job.salary.max)}
-            </Typography>
-          </Box>
-        </Box>
-
-        <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
-          {job.description}
-        </Typography>
-
-        <Box sx={{ mb: 2 }}>
-          {job.skills.map((skill) => (
-            <Chip
-              key={skill}
-              label={skill}
-              size="small"
-              sx={{ mr: 1, mb: 1 }}
-              variant="outlined"
-            />
-          ))}
-        </Box>
-
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="caption" color="text.secondary">
-            Posted {job.postedDays} days ago • {job.applicants} applicants
-          </Typography>
-        </Box>
-      </CardContent>
-      <CardActions sx={{ px: 2, pb: 2 }}>
-        <Button variant="contained" size="small">
-          Apply Now
-        </Button>
-        <Button variant="outlined" size="small">
-          View Details
-        </Button>
-      </CardActions>
-    </Card>
-  );
+  const jobTypes = [
+    { value: '', label: 'All Types' },
+    { value: 'FULL_TIME', label: 'Full Time' },
+    { value: 'PART_TIME', label: 'Part Time' },
+    { value: 'CONTRACT', label: 'Contract' },
+    { value: 'INTERNSHIP', label: 'Internship' },
+    { value: 'TEMPORARY', label: 'Temporary' },
+  ];
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      {/* Header Section */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h3" component="h1" gutterBottom fontWeight="bold">
-          Find Your Dream Job
-        </Typography>
-        <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
-          Discover opportunities from top companies worldwide
-        </Typography>
-
-        {/* Search Bar */}
-        <Paper sx={{ p: 2, mb: 3 }}>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                placeholder="Job title, keywords, or company"
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Search Header */}
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-16 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-3">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Job title, keywords..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search />
-                    </InputAdornment>
-                  ),
-                }}
+                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-900 dark:text-gray-100 placeholder-gray-500"
               />
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <TextField
-                fullWidth
-                placeholder="City, state, or remote"
+            </div>
+            <div className="md:w-64 relative">
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Location"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LocationOn />
-                    </InputAdornment>
-                  ),
-                }}
+                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-900 dark:text-gray-100 placeholder-gray-500"
               />
-            </Grid>
-            <Grid item xs={12} md={2}>
-              <FormControl fullWidth>
-                <InputLabel>Job Type</InputLabel>
-                <Select
-                  value={jobType}
-                  label="Job Type"
-                  onChange={(e) => setJobType(e.target.value)}
-                >
-                  <MenuItem value="">All Types</MenuItem>
-                  <MenuItem value="FULL_TIME">Full Time</MenuItem>
-                  <MenuItem value="PART_TIME">Part Time</MenuItem>
-                  <MenuItem value="CONTRACT">Contract</MenuItem>
-                  <MenuItem value="FREELANCE">Freelance</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={2}>
-              <Button
-                fullWidth
-                variant="contained"
-                size="large"
-                startIcon={<Search />}
-                onClick={fetchJobs}
-              >
-                Search
-              </Button>
-            </Grid>
-            <Grid item xs={12} md={1}>
-              <IconButton 
-                onClick={() => setShowFilters(!showFilters)}
-                color={showFilters ? 'primary' : 'default'}
-              >
-                <Badge badgeContent={remoteOnly ? 1 : 0} color="primary">
-                  <FilterList />
-                </Badge>
-              </IconButton>
-            </Grid>
-          </Grid>
+            </div>
+            <button type="submit" className="btn-primary px-6 py-3 rounded-xl whitespace-nowrap">
+              Search Jobs
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowFilters(!showFilters)}
+              className={`p-3 rounded-xl border transition-colors ${showFilters ? 'bg-primary-50 border-primary-200 text-primary-600 dark:bg-primary-900/20 dark:border-primary-700' : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+            >
+              <Filter className="w-5 h-5" />
+            </button>
+          </form>
 
-          {/* Advanced Filters */}
           {showFilters && (
-            <Box sx={{ mt: 3, pt: 3, borderTop: '1px solid #e0e0e0' }}>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={4}>
-                  <Typography gutterBottom>Salary Range</Typography>
-                  <Slider
-                    value={salaryRange}
-                    onChange={(e, newValue) => setSalaryRange(newValue)}
-                    valueLabelDisplay="auto"
-                    min={30000}
-                    max={200000}
-                    step={5000}
-                    valueLabelFormat={(value) => `$${(value / 1000).toFixed(0)}k`}
-                  />
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={remoteOnly}
-                        onChange={(e) => setRemoteOnly(e.target.checked)}
-                      />
-                    }
-                    label="Remote jobs only"
-                  />
-                </Grid>
-              </Grid>
-            </Box>
-          )}
-        </Paper>
-      </Box>
-
-      <Grid container spacing={4}>
-        {/* Sidebar */}
-        <Grid item xs={12} md={3}>
-          <Paper sx={{ p: 3, mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Quick Stats
-            </Typography>
-            <Stack spacing={2}>
-              <Box>
-                <Typography variant="body2" color="text.secondary">
-                  Total Jobs
-                </Typography>
-                <Typography variant="h5" color="primary">
-                  1,247
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="body2" color="text.secondary">
-                  New This Week
-                </Typography>
-                <Typography variant="h5" color="success.main">
-                  89
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="body2" color="text.secondary">
-                  Remote Jobs
-                </Typography>
-                <Typography variant="h5" color="info.main">
-                  456
-                </Typography>
-              </Box>
-            </Stack>
-          </Paper>
-
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Trending Skills
-            </Typography>
-            <Stack spacing={1}>
-              {['React', 'Python', 'AWS', 'TypeScript', 'Node.js'].map((skill) => (
-                <Chip
-                  key={skill}
-                  label={skill}
-                  icon={<TrendingUp />}
-                  clickable
-                  variant="outlined"
-                  size="small"
-                />
+            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-3">
+              {jobTypes.map((type) => (
+                <button
+                  key={type.value}
+                  onClick={() => { setJobType(type.value); setPage(1); }}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    jobType === type.value
+                      ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  {type.label}
+                </button>
               ))}
-            </Stack>
-          </Paper>
-        </Grid>
-
-        {/* Main Content */}
-        <Grid item xs={12} md={9}>
-          <Box sx={{ mb: 3 }}>
-            <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
-              <Tab label="All Jobs" />
-              <Tab label="Recommended" />
-              <Tab label="Recent" />
-              <Tab label="Saved" />
-            </Tabs>
-          </Box>
-
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="body1" color="text.secondary">
-              Showing {jobs.length} of {totalJobs} jobs • Sorted by relevance
-            </Typography>
-          </Box>
-
-          {loading && <Typography color="text.secondary">Loading jobs...</Typography>}
-
-          {!loading && jobs.length === 0 && (
-            <Typography color="text.secondary">No jobs found. Try adjusting your search.</Typography>
+            </div>
           )}
+        </div>
+      </div>
 
+      {/* Results */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <p className="text-gray-600 dark:text-gray-400">
+            {loading ? 'Searching...' : `${totalJobs.toLocaleString()} jobs found`}
+          </p>
+        </div>
+
+        {loading && (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 animate-pulse">
+                <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-3"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-4"></div>
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!loading && jobs.length === 0 && (
+          <div className="text-center py-16">
+            <Briefcase className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No jobs found</h3>
+            <p className="text-gray-600 dark:text-gray-400">Try adjusting your search or filters</p>
+          </div>
+        )}
+
+        <div className="space-y-4">
           {jobs.map((job) => (
-            <JobCard key={job.id} job={job} />
-          ))}
+            <div
+              key={job.id}
+              onClick={() => navigate(`/jobs/${job.id}`)}
+              className="group cursor-pointer bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:border-primary-200 dark:hover:border-primary-700 transition-all duration-200"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4 min-w-0 flex-1">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))' }}>
+                    <Building2 className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors truncate">
+                      {job.title}
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 font-medium">
+                      {job.company?.name || job.companyName || 'Unknown Company'}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-500 dark:text-gray-400">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-4 h-4" />
+                        {job.location}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                        {job.type?.replace('_', ' ')}
+                      </span>
+                      {formatSalary(job.salary) && (
+                        <span className="flex items-center gap-1 text-green-600 dark:text-green-400 font-medium">
+                          <DollarSign className="w-4 h-4" />
+                          {formatSalary(job.salary)}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        {new Date(job.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
-          {/* Load More */}
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-            <Button variant="outlined" size="large">
-              Load More Jobs
-            </Button>
-          </Box>
-        </Grid>
-      </Grid>
-    </Container>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={(e) => handleSaveJob(e, job.id)}
+                    className={`p-2 rounded-lg transition-colors ${savedJobs.has(job.id) ? 'text-primary-600 bg-primary-50 dark:bg-primary-900/20' : 'text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20'}`}
+                  >
+                    <Bookmark className={`w-5 h-5 ${savedJobs.has(job.id) ? 'fill-current' : ''}`} />
+                  </button>
+                  <button
+                    onClick={(e) => handleApply(e, job)}
+                    className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-all duration-200 hover:shadow-md" style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))' }}
+                  >
+                    Apply
+                    <ExternalLink className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Pagination */}
+        {totalJobs > 20 && (
+          <div className="flex justify-center gap-2 mt-8">
+            <button
+              onClick={() => setPage(Math.max(1, page - 1))}
+              disabled={page === 1}
+              className="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              Previous
+            </button>
+            <span className="px-4 py-2 text-gray-600 dark:text-gray-400">
+              Page {page} of {Math.ceil(totalJobs / 20)}
+            </span>
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={page >= Math.ceil(totalJobs / 20)}
+              className="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };

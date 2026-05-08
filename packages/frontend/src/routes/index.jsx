@@ -2,8 +2,6 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { PrivateRoute } from './PrivateRoute';
 import { HomePage } from '../pages/HomePage';
-import { JobSearchPage } from '../pages/JobSearchPage';
-import { JobDetailsPage } from '../pages/JobDetailsPage';
 import { ModernJobSearchPage } from '../pages/ModernJobSearchPage';
 import { ModernJobDetailsPage } from '../pages/ModernJobDetailsPage';
 import { LoginPage } from '../pages/auth/LoginPage';
@@ -17,13 +15,11 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route path="/jobs" element={<JobSearchPage />} />
-      <Route path="/jobs/modern" element={<ModernJobSearchPage />} />
-      <Route path="/jobs/:id" element={<JobDetailsPage />} />
-      <Route path="/jobs/modern/:id" element={<ModernJobDetailsPage />} />
+      <Route path="/jobs" element={<ModernJobSearchPage />} />
+      <Route path="/jobs/:id" element={<ModernJobDetailsPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      
+
       {/* Protected Routes */}
       <Route path="/dashboard" element={
         <PrivateRoute>
@@ -35,7 +31,7 @@ const AppRoutes = () => {
           <PostJobPage />
         </PrivateRoute>
       } />
-      
+
       <Route path="/merch" element={<MerchShopPage />} />
 
       {/* 404 and Fallback */}
