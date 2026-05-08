@@ -4,13 +4,14 @@ import api from '../services/api';
 const SiteConfigContext = createContext();
 
 const DEFAULT_CONFIG = {
-  siteName: 'Job Platform',
-  tagline: 'Find Your Dream Job',
+  siteName: 'Build The Kingdom',
+  tagline: 'Use Your Gifts to Serve Your Community',
+  description: 'Build The Kingdom is a nonprofit that helps individuals move from where they are today to where God intends for them to be. We help you achieve that goal by identifying ways for you to use your unique skills and gifts to benefit your local community.',
   logo: '/logo.svg',
   currency: 'USD',
   currencySymbol: '$',
-  primaryColor: '#2563EB',
-  secondaryColor: '#10B981',
+  primaryColor: '#7C3AED',
+  secondaryColor: '#1F2937',
   stripeEnabled: false,
   feedIngestEnabled: true,
 };

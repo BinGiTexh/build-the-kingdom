@@ -10,6 +10,7 @@ import { LoginPage } from '../pages/auth/LoginPage';
 import { RegisterPage } from '../pages/auth/RegisterPage';
 import { DashboardPage } from '../pages/dashboard/DashboardPage';
 import { PostJobPage } from '../pages/employer/PostJobPage';
+import { MerchShopPage } from '../pages/MerchShopPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 
 const AppRoutes = () => {
@@ -35,6 +36,8 @@ const AppRoutes = () => {
         </PrivateRoute>
       } />
       
+      <Route path="/merch" element={<MerchShopPage />} />
+
       {/* 404 and Fallback */}
       <Route path="/404" element={<NotFoundPage />} />
       <Route path="*" element={<Navigate to="/404" replace />} />

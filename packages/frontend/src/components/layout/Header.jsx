@@ -82,17 +82,15 @@ const Header = ({ userType, onUserTypeChange }) => {
         <Link to="/jobs" className={linkClass}>
           Find Jobs
         </Link>
-        <Link to="/companies" className={linkClass}>
-          Companies
+        <Link to="/jobs/post" className={linkClass}>
+          Post Jobs
+        </Link>
+        <Link to="/merch" className={linkClass}>
+          Merch Shop
         </Link>
         <Link to="/resources" className={linkClass}>
           Resources
         </Link>
-        {user?.userType === 'employer' && (
-          <Link to="/post-job" className={linkClass}>
-            Post Job
-          </Link>
-        )}
       </>
     );
   };

@@ -105,7 +105,7 @@ const HeroSection = () => {
             </h1>
 
             <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 mb-8 max-w-3xl mx-auto leading-relaxed animate-slide-up" style={{ animationDelay: '0.1s' }}>
-              Discover opportunities, build your career, and connect with companies that value your potential.
+              {config.description || 'Discover opportunities, build your career, and connect with companies that value your potential.'}
             </p>
           </div>
 

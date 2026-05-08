@@ -56,12 +56,12 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       REDIS_URL: redis://redis:6379
-      SITE_NAME: ${SITE_NAME:-Job Platform}
-      SITE_TAGLINE: ${SITE_TAGLINE:-Find Your Dream Job}
+      SITE_NAME: ${SITE_NAME:-Build The Kingdom}
+      SITE_TAGLINE: ${SITE_TAGLINE:-Use Your Gifts to Serve Your Community}
       SITE_DOMAIN: ${SITE_DOMAIN:-localhost}
       LOGO_URL: ${LOGO_URL:-/logo.svg}
-      PRIMARY_COLOR: ${PRIMARY_COLOR:-#2563EB}
-      SECONDARY_COLOR: ${SECONDARY_COLOR:-#10B981}
+      PRIMARY_COLOR: ${PRIMARY_COLOR:-#7C3AED}
+      SECONDARY_COLOR: ${SECONDARY_COLOR:-#1F2937}
       CURRENCY: ${CURRENCY:-USD}
       CURRENCY_SYMBOL: ${CURRENCY_SYMBOL:-$}
       STRIPE_ENABLED: ${STRIPE_ENABLED:-false}

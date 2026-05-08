@@ -4,8 +4,9 @@ const prisma = require('../lib/prisma');
 
 router.get('/', (req, res) => {
   res.json({
-    siteName: process.env.SITE_NAME || 'Job Platform',
-    tagline: process.env.SITE_TAGLINE || 'Find Your Dream Job',
+    siteName: process.env.SITE_NAME || 'Build The Kingdom',
+    tagline: process.env.SITE_TAGLINE || 'Use Your Gifts to Serve Your Community',
+    description: process.env.SITE_DESCRIPTION || 'Build The Kingdom is a nonprofit that helps individuals move from where they are today to where God intends for them to be. We help you achieve that goal by identifying ways for you to use your unique skills and gifts to benefit your local community.',
     logo: process.env.LOGO_URL || '/logo.svg',
     currency: process.env.CURRENCY || 'USD',
     currencySymbol: process.env.CURRENCY_SYMBOL || '$',
