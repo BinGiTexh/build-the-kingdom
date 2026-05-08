@@ -281,8 +281,20 @@
   .no-print {
     display: none !important;
   }
-  
+
   .print-friendly {
     @apply text-black bg-white;
   }
+}
+
+.job-description * {
+  max-width: 100%;
+}
+.job-description img {
+  display: none;
+}
+.job-description [id="hero"],
+.job-description [id="hero-loop"] {
+  all: unset;
+  display: block;
 }
