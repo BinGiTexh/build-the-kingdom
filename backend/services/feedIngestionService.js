@@ -8,14 +8,14 @@ const LOG_INTERVAL = 10000;
 class FeedIngestionService {
   transformJob(raw, source = 'appcast') {
     return {
-      externalJobId: raw.referencenumber || raw.id || raw.jobId,
+      externalJobId: raw.job_reference || raw.referencenumber || raw.id || raw.jobId,
       title: raw.title,
       description: raw.description || raw.body || raw.jobDescription || '',
       location: [raw.city, raw.state, raw.country].filter(Boolean).join(', ') || raw.location || 'Remote',
       externalApplyUrl: raw.url || raw.applyUrl || raw.applicationUrl,
       feedSource: source,
       feedImportedAt: new Date(),
-      type: this.mapJobType(raw.jobtype || raw.employmentType),
+      type: this.mapJobType(raw.job_type || raw.jobtype || raw.employmentType),
       status: 'ACTIVE',
       salary: this.parseSalary(raw.salary || raw.compensation),
       skills: this.parseSkills(raw.skills || raw.requirements),
@@ -37,11 +37,12 @@ class FeedIngestionService {
 
   mapJobType(type) {
     const map = {
-      'full-time': 'FULL_TIME', 'fulltime': 'FULL_TIME',
-      'part-time': 'PART_TIME', 'parttime': 'PART_TIME',
+      'full-time': 'FULL_TIME', 'fulltime': 'FULL_TIME', 'full time': 'FULL_TIME',
+      'part-time': 'PART_TIME', 'parttime': 'PART_TIME', 'part time': 'PART_TIME',
       'contract': 'CONTRACT', 'contractor': 'CONTRACT',
       'internship': 'INTERNSHIP', 'intern': 'INTERNSHIP',
       'temporary': 'TEMPORARY', 'temp': 'TEMPORARY',
+      'prn': 'CONTRACT', 'per diem': 'CONTRACT',
     };
     return map[type?.toLowerCase()] || 'FULL_TIME';
   }
