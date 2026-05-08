@@ -2,8 +2,8 @@ const { Readable } = require('stream');
 const { createGunzip } = require('zlib');
 const prisma = require('../lib/prisma');
 
-const BATCH_SIZE = 5000;
-const LOG_INTERVAL = 10000;
+const BATCH_SIZE = 500;
+const LOG_INTERVAL = 2000;
 
 class FeedIngestionService {
   transformJob(raw, source = 'appcast') {
