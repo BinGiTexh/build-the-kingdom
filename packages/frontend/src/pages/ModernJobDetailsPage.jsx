@@ -40,7 +40,7 @@ export const ModernJobDetailsPage = () => {
         const data = response.data;
         setJob({
           ...data,
-          company: data.companyId || 'Company',
+          company: data.company?.name || data.companyName || 'Unknown Company',
           remote: data.location?.toLowerCase().includes('remote'),
           postedDate: data.createdAt,
           requirements: typeof data.requirements === 'string'

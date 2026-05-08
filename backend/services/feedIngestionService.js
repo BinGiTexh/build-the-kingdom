@@ -12,6 +12,7 @@ class FeedIngestionService {
       title: raw.title,
       description: raw.description || raw.body || raw.jobDescription || '',
       location: [raw.city, raw.state, raw.country].filter(Boolean).join(', ') || raw.location || 'Remote',
+      companyName: raw.company || raw.employer || raw.organization || null,
       externalApplyUrl: raw.url || raw.applyUrl || raw.applicationUrl,
       feedSource: source,
       feedImportedAt: new Date(),

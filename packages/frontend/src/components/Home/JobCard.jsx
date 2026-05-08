@@ -58,7 +58,11 @@ const JobCard = ({
 
   const handleApply = (e) => {
     e.stopPropagation();
-    navigate(`/jobs/${job.id}/apply`);
+    if (job.externalApplyUrl) {
+      window.location.href = `/go/apply/${job.id}`;
+    } else {
+      navigate(`/jobs/${job.id}/apply`);
+    }
   };
 
   const handleCardClick = () => {

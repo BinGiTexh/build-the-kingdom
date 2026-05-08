@@ -75,6 +75,7 @@ model Job {
   status           JobStatus     @default(ACTIVE)
   featured         Boolean       @default(false)
   companyId        String?
+  companyName      String?
   company          Company?      @relation(fields: [companyId], references: [id])
   applications     Application[]
   savedBy          SavedJob[]

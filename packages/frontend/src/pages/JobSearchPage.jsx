@@ -133,7 +133,7 @@ export const JobSearchPage = () => {
                       {job.title}
                     </Typography>
                     <Typography color="text.secondary" gutterBottom>
-                      {job.companyId || 'Company'}
+                      {job.company?.name || job.companyName || 'Unknown Company'}
                     </Typography>
                   </Box>
                   <Chip

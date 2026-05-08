@@ -89,7 +89,7 @@ const HomePage = () => {
                   salary: job.salary?.min && job.salary?.max
                     ? `${config.currencySymbol}${(job.salary.min / 1000).toFixed(0)}K–${(job.salary.max / 1000).toFixed(0)}K`
                     : job.salary?.min ? `From ${config.currencySymbol}${(job.salary.min / 1000).toFixed(0)}K` : null,
-                  company: job.company?.name || job.company || 'Company',
+                  company: job.company?.name || job.companyName || 'Unknown Company',
                   type: job.type?.replace('_', '-'),
                   posted: new Date(job.createdAt).toLocaleDateString(),
                   requirements: Array.isArray(job.skills) ? job.skills : [],

@@ -87,9 +87,9 @@ export const ModernJobSearchPage = () => {
       <CardContent>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar 
-              src={job.logo} 
-              alt={job.company}
+            <Avatar
+              src={job.logo}
+              alt={job.company?.name || job.companyName || 'Unknown Company'}
               sx={{ width: 48, height: 48 }}
             />
             <Box>
@@ -99,17 +99,17 @@ export const ModernJobSearchPage = () => {
                 </Typography>
                 {job.verified && <Verified color="primary" sx={{ fontSize: 16 }} />}
                 {job.urgent && (
-                  <Chip 
-                    label="URGENT" 
-                    size="small" 
-                    color="error" 
+                  <Chip
+                    label="URGENT"
+                    size="small"
+                    color="error"
                     sx={{ fontSize: '0.7rem', height: 20 }}
                   />
                 )}
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Typography color="text.secondary">
-                  {job.company}
+                  {job.company?.name || job.companyName || 'Unknown Company'}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <Star sx={{ fontSize: 14, color: '#ffc107' }} />

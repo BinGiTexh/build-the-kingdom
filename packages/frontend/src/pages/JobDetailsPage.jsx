@@ -97,7 +97,7 @@ export const JobDetailsPage = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <Business sx={{ mr: 1 }} />
                   <Typography variant="h6" color="text.secondary">
-                    {job.company}
+                    {job.company?.name || job.companyName || 'Unknown Company'}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
