@@ -9,6 +9,10 @@ import { RegisterPage } from '../pages/auth/RegisterPage';
 import { DashboardPage } from '../pages/dashboard/DashboardPage';
 import { PostJobPage } from '../pages/employer/PostJobPage';
 import { MerchShopPage } from '../pages/MerchShopPage';
+import { AboutPage } from '../pages/AboutPage';
+import { ContactPage } from '../pages/ContactPage';
+import { PrivacyPolicyPage } from '../pages/PrivacyPolicyPage';
+import { TermsOfServicePage } from '../pages/TermsOfServicePage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 
 const AppRoutes = () => {
@@ -33,6 +37,10 @@ const AppRoutes = () => {
       } />
 
       <Route path="/merch" element={<MerchShopPage />} />
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="/contact" element={<ContactPage />} />
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms" element={<TermsOfServicePage />} />
 
       {/* 404 and Fallback */}
       <Route path="/404" element={<NotFoundPage />} />

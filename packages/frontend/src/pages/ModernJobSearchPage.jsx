@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useSiteConfig } from '../context/SiteConfigContext';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
 export const ModernJobSearchPage = () => {
@@ -30,6 +31,7 @@ export const ModernJobSearchPage = () => {
   const [savedJobs, setSavedJobs] = useState(new Set());
   const navigate = useNavigate();
   const { config } = useSiteConfig();
+  const { isAuthenticated } = useAuth();
 
   const fetchJobs = async () => {
     try {
@@ -53,18 +55,45 @@ export const ModernJobSearchPage = () => {
     fetchJobs();
   }, [page]);
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      api.get('/api/profiles/saved-jobs')
+        .then((res) => {
+          const ids = (res.data.savedJobs || []).map((j) => j.id);
+          setSavedJobs(new Set(ids));
+        })
+        .catch(() => {});
+    }
+  }, [isAuthenticated]);
+
   const handleSearch = (e) => {
     e.preventDefault();
     setPage(1);
     fetchJobs();
   };
 
-  const handleSaveJob = (e, jobId) => {
+  const handleSaveJob = async (e, jobId) => {
     e.stopPropagation();
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
     const next = new Set(savedJobs);
-    if (next.has(jobId)) next.delete(jobId);
+    const wasSaved = next.has(jobId);
+    if (wasSaved) next.delete(jobId);
     else next.add(jobId);
     setSavedJobs(next);
+    try {
+      if (wasSaved) {
+        await api.delete(`/api/profiles/saved-jobs/${jobId}`);
+      } else {
+        await api.post(`/api/profiles/saved-jobs/${jobId}`);
+      }
+    } catch {
+      if (wasSaved) next.add(jobId);
+      else next.delete(jobId);
+      setSavedJobs(new Set(next));
+    }
   };
 
   const handleApply = (e, job) => {
